@@ -34,6 +34,9 @@ export const RECENT_MODELS_LOCALSTORAGE_KEY = `${STORAGE_APP_NAME}.recentModels`
 
 /** Model ids kept out of the selector, backend-qualified. */
 export const HIDDEN_MODELS_LOCALSTORAGE_KEY = `${STORAGE_APP_NAME}.hiddenModels`;
+
+/** Per-model load configuration, keyed by model id. */
+export const MODEL_LOAD_CONFIGS_LOCALSTORAGE_KEY = `${STORAGE_APP_NAME}.modelLoadConfigs`;
 export const REASONING_EFFORT_DEFAULT_LOCALSTORAGE_KEY = `${STORAGE_APP_NAME}.reasoningEffortDefault`;
 export const CONVERSATION_TABS_LOCALSTORAGE_KEY = `${STORAGE_APP_NAME}.conversationTabs`;
 export const USER_OVERRIDES_LOCALSTORAGE_KEY = `${STORAGE_APP_NAME}.userOverrides`;

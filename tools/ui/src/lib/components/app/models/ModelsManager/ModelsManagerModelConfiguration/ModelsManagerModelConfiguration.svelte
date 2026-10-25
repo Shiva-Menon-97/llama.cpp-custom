@@ -4,6 +4,7 @@
 	import ModelsManagerModelConfigurationActions from './ModelsManagerModelConfigurationActions.svelte';
 	import ModelsManagerModelConfigurationHeader from './ModelsManagerModelConfigurationHeader.svelte';
 	import ModelsManagerModelConfigurationInformation from './ModelsManagerModelConfigurationInformation.svelte';
+	import ModelsManagerModelLoadConfig from './ModelsManagerModelLoadConfig.svelte';
 	import { Trash2 } from '@lucide/svelte';
 	import { DialogConfirmDownload } from '$lib/components/app/dialogs';
 	import { Button } from '$lib/components/ui/button';
@@ -128,6 +129,8 @@
 			</div>
 		{:else}
 			<ModelsManagerModelConfigurationInformation hub={hubDetails} {option} {serverProps} />
+
+			<ModelsManagerModelLoadConfig modelId={option.model} />
 
 			<div class="mt-4 border-t border-border/30 pt-3 pb-2">
 				<Button

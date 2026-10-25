@@ -48,6 +48,7 @@ import type {
 	DatabaseMessageExtraVideoFile,
 	ExportedConversation,
 	ExportedConversations,
+	ModelLoadConfig,
 	ModelLoadProgress,
 	// Model types
 	ModelModalities,
@@ -120,6 +121,7 @@ declare global {
 		// Model types
 		ModelModalities,
 		ModelOption,
+		ModelLoadConfig,
 		ModelLoadProgress,
 		// Settings types
 		SettingsChatServiceOptions,

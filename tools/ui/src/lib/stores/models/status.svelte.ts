@@ -30,7 +30,7 @@ import type {
 	ModelDownloadEntry,
 	ModelDownloadProgress
 } from '$lib/types';
-import type { ModelSidecarBadge } from '$lib/types/models';
+import type { ModelLoadConfig, ModelSidecarBadge } from '$lib/types/models';
 import { repoOf } from '$lib/utils/model-names';
 import { isAuxSidecar, isDraftSidecar, sidecarFromFileToken } from '$lib/utils/sidecars';
 import { SvelteMap, SvelteSet } from 'svelte/reactivity';
@@ -47,6 +47,8 @@ export interface ModelStatusHost {
 	/** Router model rows the status feed updates. */
 	routerModels: ApiModelDataEntry[];
 	fetchRouterModels(): Promise<void>;
+	/** The saved load config for a model, merged over the defaults. */
+	getLoadConfig(modelId: string): ModelLoadConfig;
 	isModelLoaded(modelId: string): boolean;
 	toDisplayName(id: string): string;
 }
@@ -499,7 +501,7 @@ export class ModelStatusManager {
 		reachedLoaded.catch(() => {});
 
 		try {
-			await ModelsService.load(modelId);
+			await ModelsService.load(modelId, this.host.getLoadConfig(modelId));
 			await reachedLoaded;
 			toast.success(`Model loaded: ${this.host.toDisplayName(modelId)}`);
 		} catch (error) {

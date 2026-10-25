@@ -108,6 +108,7 @@ export type {
 	ModelDownloadEntry,
 	ModelDownloadFileProgress,
 	ModelDownloadProgress,
+	ModelLoadConfig,
 	ModelLoadProgress,
 	ModelSidecarBadge,
 	ModalityCapabilities

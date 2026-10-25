@@ -11,7 +11,9 @@ import { browser } from '$app/environment';
 import {
 	FAVORITE_MODELS_LOCALSTORAGE_KEY,
 	HIDDEN_MODELS_LOCALSTORAGE_KEY,
+	LOAD_CONFIG_DEFAULTS,
 	MODEL_GROUP_OPEN_LOCALSTORAGE_KEY,
+	MODEL_LOAD_CONFIGS_LOCALSTORAGE_KEY,
 	RECENT_MODEL_LIMIT,
 	RECENT_MODELS_LOCALSTORAGE_KEY
 } from '$lib/constants';
@@ -23,7 +25,7 @@ import { conversationsStore } from '$lib/stores/conversations/index.svelte';
 import { type ModelPropsHost, ModelPropsManager } from '$lib/stores/models/props.svelte';
 import { type ModelStatusHost, ModelStatusManager } from '$lib/stores/models/status.svelte';
 import { serverStore } from '$lib/stores/server.svelte';
-import type { ParsedModelId } from '$lib/types/models';
+import type { ModelLoadConfig, ParsedModelId } from '$lib/types/models';
 import { getConversationModel } from '$lib/utils/conversation-utils';
 import { repoOf } from '$lib/utils/model-names';
 import { SvelteMap, SvelteSet } from 'svelte/reactivity';
@@ -69,6 +71,19 @@ function loadGroupOpenState(): SvelteMap<string, boolean> {
 	}
 }
 
+/** Per-model load configuration, keyed by model id. */
+function loadLoadConfigsFromStorage(): Record<string, ModelLoadConfig> {
+	if (!browser) return {};
+
+	try {
+		const raw = localStorage.getItem(MODEL_LOAD_CONFIGS_LOCALSTORAGE_KEY);
+
+		return raw ? (JSON.parse(raw) as Record<string, ModelLoadConfig>) : {};
+	} catch {
+		return {};
+	}
+}
+
 /** Recently used backend-qualified ids, most recent first. */
 function loadRecentModels(): string[] {
 	if (!browser) return [];
@@ -93,6 +108,7 @@ class ModelsStore implements ModelPropsHost, ModelStatusHost {
 	favoriteModelIds = $state<Set<string>>(this.loadFavoritesFromStorage());
 	groupOpenState = $state<SvelteMap<string, boolean>>(loadGroupOpenState());
 	hiddenModelIds = $state<Set<string>>(loadHiddenModels());
+	loadConfigs = $state<Record<string, ModelLoadConfig>>(loadLoadConfigsFromStorage());
 	loading = $state(false);
 	models = $state<ModelOption[]>([]);
 	recentModelIds = $state<string[]>(loadRecentModels());
@@ -321,6 +337,11 @@ class ModelsStore implements ModelPropsHost, ModelStatusHost {
 		);
 	}
 
+	/** The saved load config merged over the defaults; old entries lack newer keys. */
+	getLoadConfig(modelId: string): ModelLoadConfig {
+		return { ...LOAD_CONFIG_DEFAULTS, ...this.loadConfigs[modelId] };
+	}
+
 	/**
 	 * Gets the model name from the last assistant message in the active conversation.
 	 * Used by both the chat page and settings page to maintain model consistency.
@@ -489,6 +510,17 @@ class ModelsStore implements ModelPropsHost, ModelStatusHost {
 			);
 		} catch {
 			toast.error('Failed to save the model list state to local storage');
+		}
+	}
+
+	/** Persist one model's load configuration, replacing the whole entry. */
+	setLoadConfig(modelId: string, config: ModelLoadConfig): void {
+		this.loadConfigs = { ...this.loadConfigs, [modelId]: config };
+
+		try {
+			localStorage.setItem(MODEL_LOAD_CONFIGS_LOCALSTORAGE_KEY, JSON.stringify(this.loadConfigs));
+		} catch {
+			toast.error('Failed to save the model load configuration to local storage');
 		}
 	}
 

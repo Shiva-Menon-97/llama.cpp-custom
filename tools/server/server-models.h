@@ -327,6 +327,8 @@ public:
         // the partial files the download plan writes
         std::vector<std::string>             sidecars;
         std::vector<common_download_partial> partials;
+        // validated per-load args, appended to the child's own args
+        std::vector<std::string>             extra_args;
     };
 
     // load and unload model instances

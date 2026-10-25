@@ -473,6 +473,75 @@ static std::vector<std::string> get_environment() {
     return env;
 }
 
+// per-load options from the UI, mapped to child flags against an allowlist
+static std::vector<std::string> load_config_to_args(const json & cfg) {
+    std::vector<std::string> out;
+
+    auto add = [&](const char * flag, const std::string & val, std::initializer_list<const char *> allowed) {
+        if (val.empty()) {
+            return;
+        }
+        for (const char * a : allowed) {
+            if (a == val) {
+                out.push_back(flag);
+                out.push_back(val);
+                return;
+            }
+        }
+        throw std::invalid_argument(std::string("invalid value for ") + flag + ": " + val);
+    };
+
+    auto add_int = [&](const char * flag, const char * key, int min, int max) {
+        const std::string val = json_value(cfg, key, std::string());
+        if (val.empty()) {
+            return;
+        }
+        int n = 0;
+        try {
+            size_t pos = 0;
+            n = std::stoi(val, &pos);
+            if (pos != val.size()) {
+                throw std::invalid_argument("");
+            }
+        } catch (...) {
+            throw std::invalid_argument(std::string("invalid value for ") + flag + ": " + val);
+        }
+        if (n < min || n > max) {
+            throw std::invalid_argument(std::string("out of range for ") + flag + ": " + val);
+        }
+        out.push_back(flag);
+        out.push_back(std::to_string(n));
+    };
+
+    auto add_bool = [&](const char * on_flag, const char * off_flag, const char * key) {
+        const std::string val = json_value(cfg, key, std::string());
+        if (val.empty() || val == "default") {
+            return;
+        }
+        if (val == "on") {
+            out.push_back(on_flag);
+            return;
+        }
+        if (val == "off") {
+            out.push_back(off_flag);
+            return;
+        }
+        throw std::invalid_argument(std::string("invalid value for ") + key + ": " + val);
+    };
+
+    add("--cache-type-k", json_value(cfg, "cache_type_k", std::string()), {"f32","f16","bf16","q8_0","q4_0","q4_1","iq4_nl","q5_0","q5_1"});
+    add("--cache-type-v", json_value(cfg, "cache_type_v", std::string()), {"f32","f16","bf16","q8_0","q4_0","q4_1","iq4_nl","q5_0","q5_1"});
+    add("--flash-attn",   json_value(cfg, "flash_attn",   std::string()), {"on","off","auto"});
+    add("--load-mode",    json_value(cfg, "load_mode",    std::string()), {"auto","none","mmap","mlock","mmap+mlock","dio"});
+
+    add_int ("--ctx-size",     "ctx_size",     0, 1 << 20);
+    add_int ("--n-gpu-layers", "n_gpu_layers", 0, 1 << 20);
+    add_bool("--kv-offload",   "--no-kv-offload", "kv_offload");
+    add_bool("--kv-unified",   "--no-kv-unified", "kv_unified");
+
+    return out;
+}
+
 void server_model_meta::update_args(common_preset_context & ctx_preset, std::string bin_path) {
     // update params
     unset_reserved_args(preset, false);
@@ -1420,6 +1489,7 @@ void server_models::load(const std::string & name, const load_options & opts) {
         inst.meta.update_args(ctx_preset, bin_path); // render args
 
         std::vector<std::string> child_args = inst.meta.args; // copy
+        child_args.insert(child_args.end(), opts.extra_args.begin(), opts.extra_args.end());
         std::vector<std::string> child_env  = base_env; // copy
         child_env.push_back("LLAMA_SERVER_ROUTER_PORT=" + std::to_string(base_params.port));
 
@@ -2418,7 +2488,9 @@ void server_models_routes::init_routes() {
             res_err(res, format_error_response("model is already running", ERROR_TYPE_INVALID_REQUEST));
             return res;
         }
-        models.load(meta->name);
+        server_models::load_options opts;
+        opts.extra_args = load_config_to_args(json_value(body, "load_config", json::object()));
+        models.load(meta->name, opts);
         res_ok(res, {{"success", true}});
         return res;
     };

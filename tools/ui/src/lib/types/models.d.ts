@@ -87,6 +87,21 @@ export interface ModalityCapabilities {
 	hasVideo: boolean;
 }
 
+/**
+ * Per-model load configuration, kept in localStorage. An empty number or a
+ * `default` boolean sends no flag, so the child keeps its own default.
+ */
+export interface ModelLoadConfig {
+	cacheTypeK: string;
+	cacheTypeV: string;
+	flashAttn: string;
+	loadMode: string;
+	ctxSize: string;
+	nGpuLayers: string;
+	kvOffload: string;
+	kvUnified: string;
+}
+
 /** Sidecar file a listing reports as its own model entry, paired back to its model. */
 export interface ModelSidecarFile {
 	id: string;

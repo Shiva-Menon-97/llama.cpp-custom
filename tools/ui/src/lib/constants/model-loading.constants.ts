@@ -13,14 +13,38 @@ export const MODEL_LOAD_STAGE_LABELS: Record<ApiModelLoadStage, string> = {
  */
 export const MODEL_LOAD_TAIL_SHARE = 0.1;
 
-/** Load parameters a model falls back to when the server reports nothing. */
-export const LOAD_DEFAULTS = {
-	batchSize: 2048,
-	contextLength: 8192,
-	cpuThreads: 13,
-	gpuOffload: 42,
-	speculativeDecoding: 'off',
-	ubatchSize: 512
+/** KV cache types the load form offers for K and V. */
+export const CACHE_TYPE_OPTIONS = [
+	'f16',
+	'f32',
+	'bf16',
+	'q8_0',
+	'q4_0',
+	'q4_1',
+	'iq4_nl',
+	'q5_0',
+	'q5_1'
+];
+
+/** Flash Attention modes the load form offers. */
+export const FLASH_ATTN_OPTIONS = ['auto', 'on', 'off'];
+
+/** Loading modes the load form offers, as `--load-mode` values. */
+export const LOAD_MODE_OPTIONS = ['auto', 'mmap', 'mlock', 'mmap+mlock', 'none', 'dio'];
+
+/** A boolean the form can leave to the child, or force on or off. */
+export const TRI_STATE_OPTIONS = ['default', 'on', 'off'];
+
+/** Load configuration a model falls back to; empty and `default` send no flag. */
+export const LOAD_CONFIG_DEFAULTS: ModelLoadConfig = {
+	cacheTypeK: 'f16',
+	cacheTypeV: 'f16',
+	ctxSize: '',
+	flashAttn: 'auto',
+	kvOffload: 'default',
+	kvUnified: 'default',
+	loadMode: 'auto',
+	nGpuLayers: ''
 };
 
 /** Sampling parameters a model falls back to. */

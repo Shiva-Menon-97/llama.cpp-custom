@@ -95,10 +95,13 @@ def _wait_for_model_status(model_id: str, desired: set[str], timeout: int = 60, 
 
 
 def _load_model_and_wait(
-    model_id: str, timeout: int = 60, headers: dict | None = None
+    model_id: str, timeout: int = 60, headers: dict | None = None, config: dict | None = None
 ) -> None:
+    data = {"model": model_id}
+    if config is not None:
+        data["load_config"] = config
     load_res = server.make_request(
-        "POST", "/models/load", data={"model": model_id}, headers=headers
+        "POST", "/models/load", data=data, headers=headers
     )
     assert load_res.status_code == 200
     assert isinstance(load_res.body, dict)
@@ -116,6 +119,58 @@ def test_router_unload_model():
     unload_res = server.make_request("POST", "/models/unload", data={"model": model_id})
     assert unload_res.status_code == 200
     assert unload_res.body.get("success") is True
+    _wait_for_model_status(model_id, {"unloaded"})
+
+
+def _last_arg_value(args: list[str], flag: str) -> str | None:
+    if flag not in args:
+        return None
+    idx = len(args) - 1 - args[::-1].index(flag)
+    return args[idx + 1] if idx + 1 < len(args) else None
+
+
+def test_router_load_config():
+    global server
+    server.start()
+    model_id = "ggml-org/tinygemma3-GGUF:Q8_0"
+
+    _load_model_and_wait(model_id, config={
+        "ctx_size": "4096",
+        "n_gpu_layers": "0",
+        "kv_offload": "off",
+        "kv_unified": "on",
+    })
+
+    res = server.make_request("GET", "/models")
+    assert res.status_code == 200
+    args = next(
+        item["status"]["args"] for item in res.body["data"] if item["id"] == model_id
+    )
+    # the per-load values come last, so they win over the preset's own args
+    assert _last_arg_value(args, "--ctx-size") == "4096"
+    assert _last_arg_value(args, "--n-gpu-layers") == "0"
+    assert "--no-kv-offload" in args
+    assert "--kv-unified" in args
+
+
+@pytest.mark.parametrize(
+    "config",
+    [
+        {"ctx_size": "abc"},
+        {"ctx_size": "1048577"},
+        {"n_gpu_layers": "-1"},
+        {"kv_unified": "maybe"},
+    ],
+)
+def test_router_load_config_invalid(config: dict):
+    global server
+    server.start()
+    model_id = "ggml-org/tinygemma3-GGUF:Q8_0"
+
+    res = server.make_request(
+        "POST", "/models/load", data={"model": model_id, "load_config": config}
+    )
+    assert res.status_code == 400
     _wait_for_model_status(model_id, {"unloaded"})
 
 

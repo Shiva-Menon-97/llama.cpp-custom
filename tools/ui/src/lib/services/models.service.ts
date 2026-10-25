@@ -9,7 +9,7 @@
 import { base } from '$app/paths';
 import { API_MODELS, MODEL_ID, type ModelSidecar } from '$lib/constants';
 import { ServerModelStatus } from '$lib/enums';
-import type { ModelSidecarBadge, ParsedModelId } from '$lib/types/models';
+import type { ModelLoadConfig, ModelSidecarBadge, ParsedModelId } from '$lib/types/models';
 import {
 	apiDelete,
 	apiFetch,
@@ -22,6 +22,25 @@ import {
 	splitSseRecords
 } from '$lib/utils';
 import { getAuthHeaders } from '$lib/utils/api-headers';
+
+/**
+ * Map the per-model load config to the `load_config` wire keys. Empty values
+ * are left out, so the child keeps its own default.
+ */
+export function loadConfigToBody(config: ModelLoadConfig): Record<string, string> {
+	const body: Record<string, string> = {
+		cache_type_k: config.cacheTypeK,
+		cache_type_v: config.cacheTypeV,
+		ctx_size: config.ctxSize,
+		flash_attn: config.flashAttn,
+		kv_offload: config.kvOffload,
+		kv_unified: config.kvUnified,
+		load_mode: config.loadMode,
+		n_gpu_layers: config.nGpuLayers
+	};
+
+	return Object.fromEntries(Object.entries(body).filter(([, value]) => value !== ''));
+}
 
 export class ModelsService {
 	private static readonly SSE_RECONNECT_MS = 1000;
@@ -150,14 +169,18 @@ export class ModelsService {
 	 * before loading completes — use polling to await actual load status.
 	 *
 	 * @param modelId - Model identifier to load
-	 * @param extraArgs - Optional additional arguments to pass to the model instance
+	 * @param config - Optional per-model load configuration, mapped to CLI flags
 	 * @returns Load response from the server
 	 */
-	static async load(modelId: string, extraArgs?: string[]): Promise<ApiModelsLoadResponse> {
-		const payload: { model: string; extra_args?: string[] } = { model: modelId };
+	static async load(modelId: string, config?: ModelLoadConfig): Promise<ApiModelsLoadResponse> {
+		const payload: { load_config?: Record<string, string>; model: string } = { model: modelId };
 
-		if (extraArgs && extraArgs.length > 0) {
-			payload.extra_args = extraArgs;
+		if (config) {
+			const loadConfig = loadConfigToBody(config);
+
+			if (Object.keys(loadConfig).length > 0) {
+				payload.load_config = loadConfig;
+			}
 		}
 
 		return apiPost<ApiModelsLoadResponse>(API_MODELS.LOAD, payload);
