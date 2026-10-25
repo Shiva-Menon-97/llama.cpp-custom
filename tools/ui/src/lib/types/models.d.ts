@@ -100,6 +100,12 @@ export interface ModelLoadConfig {
 	nGpuLayers: string;
 	kvOffload: string;
 	kvUnified: string;
+	temperature: string;
+	topP: string;
+	topK: string;
+	minP: string;
+	repeatPenalty: string;
+	repeatLastN: string;
 }
 
 /** Sidecar file a listing reports as its own model entry, paired back to its model. */

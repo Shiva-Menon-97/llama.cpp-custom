@@ -30,6 +30,8 @@
 #include <random>
 #include <sstream>
 #include <cstring>
+#include <cmath>
+#include <limits>
 
 #ifndef _WIN32
 extern char **environ;
@@ -513,6 +515,28 @@ static std::vector<std::string> load_config_to_args(const json & cfg) {
         out.push_back(std::to_string(n));
     };
 
+    auto add_float = [&](const char * flag, const char * key, float min, float max, bool min_exclusive = false) {
+        const std::string val = json_value(cfg, key, std::string());
+        if (val.empty()) {
+            return;
+        }
+        float f = 0.0f;
+        try {
+            size_t pos = 0;
+            f = std::stof(val, &pos);
+            if (pos != val.size() || !std::isfinite(f)) {
+                throw std::invalid_argument("");
+            }
+        } catch (...) {
+            throw std::invalid_argument(std::string("invalid value for ") + flag + ": " + val);
+        }
+        if (f < min || f > max || (min_exclusive && f == min)) {
+            throw std::invalid_argument(std::string("out of range for ") + flag + ": " + val);
+        }
+        out.push_back(flag);
+        out.push_back(val);
+    };
+
     auto add_bool = [&](const char * on_flag, const char * off_flag, const char * key) {
         const std::string val = json_value(cfg, key, std::string());
         if (val.empty() || val == "default") {
@@ -538,6 +562,13 @@ static std::vector<std::string> load_config_to_args(const json & cfg) {
     add_int ("--n-gpu-layers", "n_gpu_layers", 0, 1 << 20);
     add_bool("--kv-offload",   "--no-kv-offload", "kv_offload");
     add_bool("--kv-unified",   "--no-kv-unified", "kv_unified");
+
+    add_float("--temp",           "temperature",    0.0f, std::numeric_limits<float>::max());
+    add_float("--top-p",          "top_p",          0.0f, 1.0f);
+    add_float("--min-p",          "min_p",          0.0f, 1.0f);
+    add_float("--repeat-penalty", "repeat_penalty", 0.0f, std::numeric_limits<float>::max(), true);
+    add_int  ("--top-k",          "top_k",          0,    1 << 20);
+    add_int  ("--repeat-last-n",  "repeat_last_n",  0,    1 << 20);
 
     return out;
 }

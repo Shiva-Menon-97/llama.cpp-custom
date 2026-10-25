@@ -44,16 +44,13 @@ export const LOAD_CONFIG_DEFAULTS: ModelLoadConfig = {
 	kvOffload: 'default',
 	kvUnified: 'default',
 	loadMode: 'auto',
-	nGpuLayers: ''
-};
-
-/** Sampling parameters a model falls back to. */
-export const SAMPLING_DEFAULTS = {
-	minP: 0.05,
-	repeatPenalty: 1.1,
-	temperature: 1,
-	topK: 64,
-	topP: 0.95
+	nGpuLayers: '',
+	temperature: '',
+	topP: '',
+	topK: '',
+	minP: '',
+	repeatPenalty: '',
+	repeatLastN: ''
 };
 
 /** Speculative decoding modes the load form offers. */

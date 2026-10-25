@@ -54,18 +54,19 @@
 	label: string,
 	value: string,
 	placeholder: string,
-	onInput: (value: string) => void
+	onInput: (value: string) => void,
+	step = '1'
 )}
 	<div class={rowClass}>
 		<span class="text-sm text-muted-foreground">{label}</span>
 
 		<Input
 			class={numberInput}
-			inputmode="numeric"
+			inputmode={step === '1' ? 'numeric' : 'decimal'}
 			min="0"
 			oninput={(event) => onInput(event.currentTarget.value)}
 			{placeholder}
-			step="1"
+			{step}
 			type="number"
 			{value}
 		/>
@@ -116,6 +117,57 @@
 					Context is split across 4 slots when unified KV is off (per slot: size / 4).
 				</p>
 			{/if}
+		</div>
+	</CollapsibleSection>
+
+	<CollapsibleSection triggerClass={sectionTrigger}>
+		{#snippet trigger()}
+			<span class="text-sm font-medium">Sampling defaults</span>
+		{/snippet}
+
+		<div class="mt-1">
+			{@render numberRow(
+				'Temperature',
+				config.temperature,
+				'default',
+				(value) => update({ temperature: value }),
+				'0.01'
+			)}
+
+			{@render numberRow(
+				'Top P',
+				config.topP,
+				'default',
+				(value) => update({ topP: value }),
+				'0.01'
+			)}
+
+			{@render numberRow('Top K', config.topK, 'default', (value) => update({ topK: value }))}
+
+			{@render numberRow(
+				'Min P',
+				config.minP,
+				'default',
+				(value) => update({ minP: value }),
+				'0.01'
+			)}
+
+			{@render numberRow(
+				'Repeat penalty',
+				config.repeatPenalty,
+				'default',
+				(value) => update({ repeatPenalty: value }),
+				'0.01'
+			)}
+
+			{@render numberRow('Repeat last N', config.repeatLastN, 'default', (value) =>
+				update({ repeatLastN: value })
+			)}
+
+			<p class="pt-2 text-xs text-muted-foreground">
+				Defaults for this model. A request that sends its own value still wins. Empty leaves the
+				model's own default.
+			</p>
 		</div>
 	</CollapsibleSection>
 </div>

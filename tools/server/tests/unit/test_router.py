@@ -139,6 +139,12 @@ def test_router_load_config():
         "n_gpu_layers": "0",
         "kv_offload": "off",
         "kv_unified": "on",
+        "temperature": "0",
+        "top_p": "0",
+        "top_k": "0",
+        "min_p": "0",
+        "repeat_penalty": "1.1",
+        "repeat_last_n": "64",
     })
 
     res = server.make_request("GET", "/models")
@@ -151,6 +157,13 @@ def test_router_load_config():
     assert _last_arg_value(args, "--n-gpu-layers") == "0"
     assert "--no-kv-offload" in args
     assert "--kv-unified" in args
+    # zero is a value, not an empty field
+    assert _last_arg_value(args, "--temp") == "0"
+    assert _last_arg_value(args, "--top-p") == "0"
+    assert _last_arg_value(args, "--top-k") == "0"
+    assert _last_arg_value(args, "--min-p") == "0"
+    assert _last_arg_value(args, "--repeat-penalty") == "1.1"
+    assert _last_arg_value(args, "--repeat-last-n") == "64"
 
 
 @pytest.mark.parametrize(
@@ -160,6 +173,9 @@ def test_router_load_config():
         {"ctx_size": "1048577"},
         {"n_gpu_layers": "-1"},
         {"kv_unified": "maybe"},
+        {"repeat_penalty": "0"},
+        {"temperature": "abc"},
+        {"top_k": "-1"},
     ],
 )
 def test_router_load_config_invalid(config: dict):

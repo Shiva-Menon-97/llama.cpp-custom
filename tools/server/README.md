@@ -2261,10 +2261,34 @@ Load a model
 
 Payload:
 - `model`: name of the model to be loaded.
+- `load_config`: optional per-load options passed to the child process. Values
+  are strings, not JSON numbers; a non-string value is ignored. An empty or
+  omitted value sends no flag, so the child keeps its own default, including
+  any sampling metadata in the GGUF.
+
+  Sampling keys:
+
+  | key | flag | range |
+  | --- | --- | --- |
+  | `temperature` | `--temp` | finite, >= 0 |
+  | `top_p` | `--top-p` | 0..1 |
+  | `top_k` | `--top-k` | integer, 0..1048576 |
+  | `min_p` | `--min-p` | 0..1 |
+  | `repeat_penalty` | `--repeat-penalty` | finite, > 0 |
+  | `repeat_last_n` | `--repeat-last-n` | integer, 0..1048576 |
+
+  A set value overrides the model metadata; an empty one leaves it in place.
+  These flags apply to the load that received them. An automatic reload (idle
+  unload, LRU eviction, `--models-max`) starts the child without them.
 
 ```json
 {
-  "model": "ggml-org/gemma-3-4b-it-GGUF:Q4_K_M"
+  "model": "ggml-org/gemma-3-4b-it-GGUF:Q4_K_M",
+  "load_config": {
+    "ctx_size": "8192",
+    "temperature": "0.7",
+    "top_p": "0.9"
+  }
 }
 ```
 

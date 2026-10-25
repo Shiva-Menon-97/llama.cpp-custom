@@ -36,7 +36,13 @@ export function loadConfigToBody(config: ModelLoadConfig): Record<string, string
 		kv_offload: config.kvOffload,
 		kv_unified: config.kvUnified,
 		load_mode: config.loadMode,
-		n_gpu_layers: config.nGpuLayers
+		n_gpu_layers: config.nGpuLayers,
+		temperature: config.temperature,
+		top_p: config.topP,
+		top_k: config.topK,
+		min_p: config.minP,
+		repeat_penalty: config.repeatPenalty,
+		repeat_last_n: config.repeatLastN
 	};
 
 	return Object.fromEntries(Object.entries(body).filter(([, value]) => value !== ''));
