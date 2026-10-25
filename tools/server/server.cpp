@@ -91,6 +91,9 @@ static server_http_context::handler_t ex_wrapper(server_http_context::handler_t 
     };
 }
 
+// forward declared; defined in server-skills.cpp
+server_http_context::handler_t make_skills_scan_handler();
+
 int llama_server(int argc, char ** argv) {
     server_child child;
 
@@ -276,6 +279,9 @@ int llama_server(common_params & params, int argc, char ** argv, server_child & 
         ctx_http.get ("/models/sse",           ex_wrapper(models_routes->get_router_models_sse));
         ctx_http.del ("/models",               ex_wrapper(models_routes->del_router_models));
     }
+
+    // Skills: scan a user-specified directory for SKILL.md files
+    ctx_http.post("/v1/skills/scan", ex_wrapper(make_skills_scan_handler()));
 
     ctx_http.get ("/health",                   ex_wrapper(routes.get_health)); // public endpoint (no API key check)
     ctx_http.get ("/v1/health",                ex_wrapper(routes.get_health)); // public endpoint (no API key check)

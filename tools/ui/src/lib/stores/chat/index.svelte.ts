@@ -30,6 +30,7 @@ import { mcpStore } from '$lib/stores/mcp/index.svelte';
 import { modelsStore } from '$lib/stores/models/index.svelte';
 import { serverStore } from '$lib/stores/server.svelte';
 import { settingsStore } from '$lib/stores/settings/index.svelte';
+import { skillsStore } from '$lib/stores/skills/skills.svelte';
 import { toolsStore } from '$lib/stores/tools.svelte';
 import type {
 	ApiChatMessageData,
@@ -47,7 +48,62 @@ import {
 	isAbortError,
 	normalizeModelName
 } from '$lib/utils';
+import { matchSkills } from '$lib/utils/skills';
 import { SvelteMap } from 'svelte/reactivity';
+
+// Characters that delimit an @-mention token; same set as mention-token.ts.
+const SKILL_MENTION_BOUNDARY_CHARS = new Set([
+	' ',
+	'\t',
+	'\n',
+	'\r',
+	'(',
+	')',
+	'[',
+	']',
+	',',
+	';',
+	':',
+	'"',
+	"'"
+]);
+
+/**
+ * Scan `content` for every `@<skill-id>` token and return the unique skill IDs
+ * in order of first appearance. Returns an empty array when there are none.
+ */
+function extractMentionedSkillIds(content: string): string[] {
+	const ids: string[] = [];
+	const seen = new Set<string>();
+	let searchFrom = 0;
+
+	while (true) {
+		const atIdx = content.indexOf('@', searchFrom);
+		if (atIdx === -1) break;
+
+		// Boundary check before @
+		if (atIdx > 0 && !SKILL_MENTION_BOUNDARY_CHARS.has(content[atIdx - 1])) {
+			searchFrom = atIdx + 1;
+			continue;
+		}
+
+		// Find end of the skill id
+		let end = atIdx + 1;
+		while (end < content.length && !SKILL_MENTION_BOUNDARY_CHARS.has(content[end])) {
+			end++;
+		}
+
+		const skillId = content.slice(atIdx + 1, end);
+		if (skillId.length > 0 && !seen.has(skillId)) {
+			seen.add(skillId);
+			ids.push(skillId);
+		}
+
+		searchFrom = end;
+	}
+
+	return ids;
+}
 
 class ChatStore implements ChatStreamHost, ChatFlowsHost {
 	chatReasoningStates = new SvelteMap<string, boolean>();
@@ -651,7 +707,31 @@ class ChatStore implements ChatStreamHost, ChatFlowsHost {
 			if (isNewConversation) {
 				const rootId = await DatabaseService.createRootMessage(currentConv.id);
 				const currentConfig = settingsStore.config;
-				const systemPrompt = currentConfig.systemMessage?.toString().trim();
+				let systemPrompt = currentConfig.systemMessage?.toString().trim();
+
+				// Inject enabled skills matched to the user's query into the system
+				// prompt so the agent carries skill context on its first turn.
+				const matchedSkills = skillsStore.match(content);
+				if (matchedSkills.length) {
+					const skillBlocks = matchedSkills
+						.map((s) => `## Skill: ${s.name}\n${s.content}`)
+						.join('\n\n');
+					systemPrompt = systemPrompt
+						? `${systemPrompt}\n\n---\n\n${skillBlocks}`
+						: skillBlocks;
+				}
+
+				// Inject skills explicitly referenced with @<skill-id> in the
+				// user's message, so the agent carries that skill's context too.
+				const mentionedSkillIds = extractMentionedSkillIds(content);
+				for (const skillId of mentionedSkillIds) {
+					const skill = skillsStore.enabled.find((s) => s.id === skillId);
+					if (!skill) continue;
+					const skillBlock = `## Skill: ${skill.name}\n${skill.content}`;
+					systemPrompt = systemPrompt
+						? `${systemPrompt}\n\n---\n\n${skillBlock}`
+						: skillBlock;
+				}
 
 				let sysOrRootId = rootId;
 

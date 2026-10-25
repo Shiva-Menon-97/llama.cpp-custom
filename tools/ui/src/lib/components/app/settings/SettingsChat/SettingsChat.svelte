@@ -6,6 +6,7 @@
 		SettingsChatImportExportTab,
 		SettingsChatMobileHeader,
 		SettingsChatToolsTab,
+		SkillsPanel,
 		SettingsFooter
 	} from '$lib/components/app/settings';
 	import { Button } from '$lib/components/ui/button';
@@ -158,6 +159,8 @@
 						<SettingsChatToolsTab />
 					{:else if currentSection.slug === SETTINGS_SECTION_SLUGS.IMPORT_EXPORT}
 						<SettingsChatImportExportTab />
+					{:else if currentSection.slug === SETTINGS_SECTION_SLUGS.SKILLS}
+						<SkillsPanel />
 					{:else if currentSection.fields}
 						<div class="space-y-6">
 							<SettingsChatFields

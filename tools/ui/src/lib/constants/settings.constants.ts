@@ -13,7 +13,8 @@ import {
 	Moon,
 	PencilRuler,
 	SlidersVertical,
-	Sun
+	Sun,
+	Bot
 } from '@lucide/svelte';
 import { SyncableParameterType } from '$lib/enums';
 import { SettingsFieldType } from '$lib/enums/settings.enums';
@@ -34,6 +35,7 @@ export const SETTINGS_SECTIONS = {
 	GENERAL: { slug: 'general', title: 'General' },
 	IMPORT_EXPORT: { slug: 'import-export', title: 'Import/Export' },
 	SAMPLING_PENALTIES: { slug: 'sampling-penalties', title: 'Sampling & Penalties' },
+	SKILLS: { slug: 'skills', title: 'Skills' },
 	TOOLS: { slug: 'tools', title: 'Tools' }
 } as const;
 
@@ -44,6 +46,7 @@ export const SETTINGS_SECTION_SLUGS = {
 	GENERAL: SETTINGS_SECTIONS.GENERAL.slug,
 	IMPORT_EXPORT: SETTINGS_SECTIONS.IMPORT_EXPORT.slug,
 	SAMPLING_PENALTIES: SETTINGS_SECTIONS.SAMPLING_PENALTIES.slug,
+	SKILLS: SETTINGS_SECTIONS.SKILLS.slug,
 	TOOLS: SETTINGS_SECTIONS.TOOLS.slug
 } as const;
 
@@ -54,6 +57,7 @@ export const SETTINGS_SECTION_TITLES = {
 	GENERAL: SETTINGS_SECTIONS.GENERAL.title,
 	IMPORT_EXPORT: SETTINGS_SECTIONS.IMPORT_EXPORT.title,
 	SAMPLING_PENALTIES: SETTINGS_SECTIONS.SAMPLING_PENALTIES.title,
+	SKILLS: SETTINGS_SECTIONS.SKILLS.title,
 	TOOLS: SETTINGS_SECTIONS.TOOLS.title
 } as const;
 
@@ -671,6 +675,13 @@ export const SETTINGS_REGISTRY: SettingsSectionEntry[] = [
 		],
 		slug: SETTINGS_SECTION_SLUGS.DEVELOPER,
 		title: SETTINGS_SECTION_TITLES.DEVELOPER
+	},
+	// Skills
+	{
+		icon: Bot,
+		settings: [],
+		slug: SETTINGS_SECTION_SLUGS.SKILLS,
+		title: SETTINGS_SECTION_TITLES.SKILLS
 	}
 ];
 

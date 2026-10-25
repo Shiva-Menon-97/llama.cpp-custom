@@ -60,6 +60,13 @@ export { default as SettingsChatImportExportSection } from './SettingsChat/Setti
 export { default as SettingsMcpServers } from './SettingsMcpServers.svelte';
 
 /**
+ * Skills configuration panel.
+ * Provides UI for scanning a directory for SKILL.md files and enabling
+ * per-skill injection into the conversation system prompt.
+ */
+export { default as SkillsPanel } from '../skills/SkillsPanel.svelte';
+
+/**
  * Form fields renderer for individual settings. Generates appropriate input
  * components based on field type (text, number, select, checkbox, textarea).
  * Handles validation, help text display, and parameter source indicators.

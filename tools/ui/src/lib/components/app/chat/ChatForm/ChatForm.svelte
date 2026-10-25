@@ -515,6 +515,27 @@
 		}
 	}
 
+	// Replace the `@<skill-name>` token with `@<skill-id>` so the send flow
+	// can inject the skill's content into the system prompt.
+	function handleSkillSelect(skillId: string) {
+		const cursor = inputRef?.getCaretOffset() ?? value.length;
+		const token = findMentionToken(value, cursor);
+
+		if (!token) return;
+
+		const newValue = value.slice(0, token.start) + '@' + skillId + value.slice(token.end);
+
+		pendingCaretOffset = token.start + 1 + skillId.length;
+		caretOffsetPinned = true;
+
+		value = newValue;
+		onValueChange?.(newValue);
+
+		if (useRichInput) {
+			queueCaretRestore();
+		}
+	}
+
 	async function handleMicClick() {
 		if (!audioRecorder || !recordingSupported) {
 			console.warn('Audio recording not supported');
@@ -563,7 +584,8 @@
 		isCommandPickerOpen={pickers.isCommandPickerOpen}
 		isMentionPickerOpen={pickers.isMentionPickerOpen}
 		isPromptPickerOpen={pickers.isPromptPickerOpen}
-		{mentionAnchor}
+		isSkillPickerOpen={pickers.isSkillPickerOpen}
+		mentionAnchor={mentionAnchor}
 		mentionQuery={pickers.mentionQuery}
 		onCommandPickerClose={pickers.handleCommandPickerClose}
 		onCommandSelect={pickers.handleCommandSelect}
@@ -574,8 +596,11 @@
 		onPromptLoadError={handlePromptLoadError}
 		onPromptLoadStart={handlePromptLoadStart}
 		onPromptPickerClose={pickers.handlePromptPickerClose}
+		onSkillPickerClose={pickers.handleSkillPickerClose}
+		onSkillSelect={handleSkillSelect}
 		promptSearchQuery={pickers.promptSearchQuery}
 		scopePath={pickers.mentionScopePath}
+		skillQuery={pickers.skillQuery}
 	/>
 
 	<div

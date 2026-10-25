@@ -52,6 +52,9 @@ export { uiStore } from './ui.svelte';
 // SETTINGS / UI PREFERENCES
 export { settingsStore } from './settings/index.svelte';
 
+// SKILLS (per-session discovered + enabled SKILL.md files)
+export { skillsStore } from './skills/skills.svelte';
+
 export { permissionsStore } from './permissions.svelte';
 
 // TOOLS

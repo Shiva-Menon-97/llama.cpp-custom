@@ -2,12 +2,14 @@
 	import ChatFormPickerCommand from './ChatFormPickerCommand.svelte';
 	import ChatFormPickerMcpPrompts from './ChatFormPickerMcpPrompts/ChatFormPickerMcpPrompts.svelte';
 	import ChatFormPickerMention from './ChatFormPickerMention.svelte';
+	import ChatFormPickerSkill from './ChatFormPickerSkill.svelte';
 	import type {
 		ChatFormCommand,
 		FileMentionEntry,
 		GetPromptResult,
 		MCPPromptInfo
 	} from '$lib/types';
+	import type { Skill } from '$lib/utils/skills';
 
 	interface Props {
 		isCommandPickerOpen?: boolean;
@@ -17,6 +19,8 @@
 		promptSearchQuery?: string;
 		isMentionPickerOpen?: boolean;
 		mentionQuery?: string;
+		isSkillPickerOpen?: boolean;
+		skillQuery?: string;
 		mentionAnchor?: HTMLElement | null;
 		scopePath?: string | null;
 		onCommandPickerClose?: () => void;
@@ -25,6 +29,8 @@
 		onMentionPickerClose?: () => void;
 		onMentionOpened?: () => void;
 		onMentionSelect?: (entry: FileMentionEntry) => void;
+		onSkillPickerClose?: () => void;
+		onSkillSelect?: (skillId: string) => void;
 		onPromptLoadStart?: (
 			placeholderId: string,
 			promptInfo: MCPPromptInfo,
@@ -40,13 +46,17 @@
 		isCommandPickerOpen,
 		isMentionPickerOpen,
 		isPromptPickerOpen,
+		isSkillPickerOpen,
 		mentionAnchor,
 		mentionQuery,
+		skillQuery,
 		onCommandPickerClose,
 		onCommandSelect,
 		onMentionOpened,
 		onMentionPickerClose,
 		onMentionSelect,
+		onSkillPickerClose,
+		onSkillSelect,
 		onPromptLoadComplete,
 		onPromptLoadError,
 		onPromptLoadStart,
@@ -58,6 +68,7 @@
 	let commandPickerRef: ChatFormPickerCommand | undefined = $state(undefined);
 	let promptPickerRef: ChatFormPickerMcpPrompts | undefined = $state(undefined);
 	let mentionPickerRef: ChatFormPickerMention | undefined = $state(undefined);
+	let skillPickerRef: ChatFormPickerSkill | undefined = $state(undefined);
 
 	/** Delegate keyboard events to the active picker child; true if handled. */
 	export function handleKeydown(event: KeyboardEvent): boolean {
@@ -70,6 +81,10 @@
 		}
 
 		if (isMentionPickerOpen && mentionPickerRef?.handleKeydown(event)) {
+			return true;
+		}
+
+		if (isSkillPickerOpen && skillPickerRef?.handleKeydown(event)) {
 			return true;
 		}
 
@@ -105,4 +120,14 @@
 	onSelect={onMentionSelect ?? (() => {})}
 	query={mentionQuery ?? ''}
 	scopePath={scopePath ?? null}
+/>
+
+<ChatFormPickerSkill
+	bind:this={skillPickerRef}
+	customAnchor={mentionAnchor}
+	isOpen={isSkillPickerOpen ?? false}
+	onClose={onSkillPickerClose ?? (() => {})}
+	onOpened={onMentionOpened}
+	onSelect={(skill: Skill) => onSkillSelect?.(skill.id)}
+	query={skillQuery ?? ''}
 />

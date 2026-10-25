@@ -46,11 +46,15 @@ export function useChatFormPickers(opts: UseChatFormPickersOptions) {
 	let promptSearchQuery = $state('');
 	let isMentionPickerOpen = $state(false);
 	let mentionQuery = $state('');
+	let isSkillPickerOpen = $state(false);
+	let skillQuery = $state('');
 	let isWorkingDirectoryPickerOpen = $state(false);
 	let workingDirectoryQuery = $state('');
 	// Last dismissed `@`-mention token; while intact, the picker does not
 	// reopen, so an escaped `@<query>` stays literal until edited.
 	let mentionDismissedSnapshot: MentionDismissSnapshot | null = null;
+	// Same dismissal contract for skill `@` tokens.
+	let skillDismissedSnapshot: MentionDismissSnapshot | null = null;
 	// Same dismissal contract for the `/`-command token.
 	let commandDismissedSnapshot: CommandDismissSnapshot | null = null;
 
@@ -179,6 +183,7 @@ export function useChatFormPickers(opts: UseChatFormPickersOptions) {
 			isWorkingDirectoryPickerOpen = false;
 		}
 
+		// `@<token>` drives both the file mention picker and the skill picker.
 		const token = findMentionToken(value, cursor);
 
 		if (token) {
@@ -188,30 +193,39 @@ export function useChatFormPickers(opts: UseChatFormPickersOptions) {
 				mentionDismissedSnapshot.start === token.start &&
 				mentionDismissedSnapshot.query === token.query;
 
-			if (!isDismissedSticky) {
-				// Only search once a char follows `@`; a bare `@` is a no-op
-				// (otherwise the picker flashes an empty hint on re-type).
-				if (token.query.length > 0) {
-					mentionDismissedSnapshot = null;
-					isMentionPickerOpen = true;
-					mentionQuery = token.query;
-					isPromptPickerOpen = false;
-					promptSearchQuery = '';
+			const isSkillSticky =
+				skillDismissedSnapshot !== null &&
+				skillDismissedSnapshot.start === token.start &&
+				skillDismissedSnapshot.query === token.query;
 
-					return;
-				}
+			if (!isDismissedSticky && token.query.length > 0) {
+				mentionDismissedSnapshot = null;
+				isMentionPickerOpen = true;
+				mentionQuery = token.query;
 			}
+
+			if (!isSkillSticky && token.query.length > 0) {
+				skillDismissedSnapshot = null;
+				isSkillPickerOpen = true;
+				skillQuery = token.query;
+			}
+
+			isPromptPickerOpen = false;
+			promptSearchQuery = '';
+
+			return;
 		}
 
 		isPromptPickerOpen = false;
 		promptSearchQuery = '';
 		isMentionPickerOpen = false;
 		mentionQuery = '';
+		isSkillPickerOpen = false;
+		skillQuery = '';
 
-		// Token gone or changed: reset the snapshot so a fresh `@` reopens.
-		if (mentionDismissedSnapshot !== null && !token) {
-			mentionDismissedSnapshot = null;
-		}
+		// Token gone or changed: reset the snapshots so a fresh `@` reopens.
+		if (mentionDismissedSnapshot !== null) mentionDismissedSnapshot = null;
+		if (skillDismissedSnapshot !== null) skillDismissedSnapshot = null;
 	}
 
 	function handleKeydown(event: KeyboardEvent): boolean {
@@ -262,6 +276,19 @@ export function useChatFormPickers(opts: UseChatFormPickersOptions) {
 
 		isMentionPickerOpen = false;
 		mentionQuery = '';
+		opts.focusInput();
+	}
+
+	// Same dismissal snapshot for the skill token.
+	function handleSkillPickerClose() {
+		if (isSkillPickerOpen) {
+			const cursor = opts.getCaretOffset() ?? opts.getValue().length;
+
+			skillDismissedSnapshot = takeMentionDismissSnapshot(opts.getValue(), cursor);
+		}
+
+		isSkillPickerOpen = false;
+		skillQuery = '';
 		opts.focusInput();
 	}
 
@@ -322,6 +349,7 @@ export function useChatFormPickers(opts: UseChatFormPickersOptions) {
 		handleKeydown,
 		handleMentionPickerClose,
 		handlePromptPickerClose,
+		handleSkillPickerClose,
 		handleWorkingDirectoryClose,
 		handleWorkingDirectoryOpen,
 		get isCommandPickerOpen() {
@@ -335,6 +363,18 @@ export function useChatFormPickers(opts: UseChatFormPickersOptions) {
 		},
 		set isMentionPickerOpen(v: boolean) {
 			isMentionPickerOpen = v;
+		},
+		get isSkillPickerOpen() {
+			return isSkillPickerOpen;
+		},
+		set isSkillPickerOpen(v: boolean) {
+			isSkillPickerOpen = v;
+		},
+		get skillQuery() {
+			return skillQuery;
+		},
+		set skillQuery(v: string) {
+			skillQuery = v;
 		},
 		get isPromptPickerOpen() {
 			return isPromptPickerOpen;
