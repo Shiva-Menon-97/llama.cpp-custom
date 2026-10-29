@@ -26,6 +26,10 @@ export interface UseChatFormPickersOptions {
 	hasPrompts: () => boolean;
 	/** Gates `/cwd`. */
 	hasCwdTools: () => boolean;
+	/** Gates `/compact`. */
+	canCompact: () => boolean;
+	/** Runs `/compact`. */
+	onCompact: () => void;
 	getCwd: () => string | null;
 	/** Mention search fallback scope. */
 	getServerHome: () => string | null;
@@ -63,6 +67,7 @@ export function useChatFormPickers(opts: UseChatFormPickersOptions) {
 	const mentionScopePath = $derived(opts.getCwd() ?? opts.getServerHome() ?? null);
 	const availableCommands = $derived(
 		getChatCommands({
+			canCompact: opts.canCompact,
 			hasCwdTools: opts.hasCwdTools,
 			hasPrompts: opts.hasPrompts,
 			showModelSelector: opts.getShowModelSelector()
@@ -78,6 +83,12 @@ export function useChatFormPickers(opts: UseChatFormPickersOptions) {
 		commandQuery = '';
 
 		switch (command.action) {
+			case ChatFormCommandAction.COMPACT:
+				isWorkingDirectoryPickerOpen = false;
+				opts.setValue('');
+				opts.onCompact();
+
+				break;
 			case ChatFormCommandAction.PROMPT:
 				isWorkingDirectoryPickerOpen = false;
 				opts.setValue('');
